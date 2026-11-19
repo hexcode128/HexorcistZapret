@@ -7,16 +7,17 @@
        inline SVG. Without it the policy blocked the image and the select rendered
        with no arrow at all. Kept narrow: only images, and no remote origin. -->
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;">
-  <title>UnblockPro</title>
+  <title>HexorcistZapret</title>
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="hexorcist-theme.css">
 </head>
 <body>
   <div class="app-container">
     <!-- Title bar -->
     <div class="title-bar" id="titleBar">
       <div class="title-text">
-        <span class="logo">U</span>
-        UnblockPro
+        <span class="logo">H</span>
+        HexorcistZapret
       </div>
       <div class="window-controls">
         <button class="window-btn minimize" id="minimizeBtn" title="Свернуть">
@@ -165,7 +166,20 @@
       <button class="connect-btn" id="connectBtn">
         <span class="btn-text">Подключить</span>
       </button>
-
+            <!-- Telegram (tglock) -->
+      <div class="tg-card" id="tgCard">
+        <div class="tg-row">
+          <div class="tg-info">
+            <span class="setting-label">Telegram</span>
+            <span class="setting-desc" id="tgStatus">Выключено</span>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="tgToggle">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <button type="button" class="link-btn" id="tgOpenBtn" style="display: none;">Открыть прокси в Telegram</button>
+      </div>
       <!-- Custom domains -->
       <div class="domains-card" id="domainsCard">
         <button class="domains-header" id="domainsToggle">

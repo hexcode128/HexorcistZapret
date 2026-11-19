@@ -37,7 +37,13 @@ contextBridge.exposeInMainWorld('api', {
   copyLogs: () => ipcRenderer.invoke('copy-logs'),
   showLogFile: () => ipcRenderer.invoke('show-log-file'),
   clearError: () => ipcRenderer.invoke('clear-error'),
-  
+    // Telegram (tglock)
+  tglockStatus: () => ipcRenderer.invoke('tglock:status'),
+  tglockSet: (enabled) => ipcRenderer.invoke('tglock:set', enabled),
+  tglockOpenLink: () => ipcRenderer.invoke('tglock:open-link'),
+  onTglockState: (callback) => {
+    ipcRenderer.on('tglock:state', (event, data) => callback(data));
+  },
   // Custom domains
   getCustomDomains: () => ipcRenderer.invoke('get-custom-domains'),
   setCustomDomains: (data) => ipcRenderer.invoke('set-custom-domains', data),

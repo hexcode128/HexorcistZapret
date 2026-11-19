@@ -3169,7 +3169,7 @@ function createTray() {
   }
 
   tray = new Tray(trayIcon);
-  tray.setToolTip('UnblockPro');
+  tray.setToolTip('HexorcistZapret');
 
   updateTrayMenu();
 
@@ -3233,7 +3233,7 @@ function sendUpdateStatus(status, version = null) {
 }
 
 // ============= IPC HANDLERS =============
-
+require('./tglock-manager').setupTglock();
 ipcMain.handle('start-proxy', async () => {
   return await startProxy();
 });

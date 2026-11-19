@@ -1,0 +1,50 @@
+/* HexorcistZapret: тёмная тема, акцент #2700FF.
+   Подключается ПОСЛЕ styles.css и только переопределяет цвета. */
+:root {
+  --hx-accent: #2700ff;       /* заливки, рамки, тумблеры */
+  --hx-accent-text: #8f7bff;  /* акцент для текста: чистый #2700ff на тёмном читается плохо */
+  --hx-bg: #0a0a0f;
+  --hx-surface: #12121a;
+  --hx-border: #25253a;
+  --hx-glow: rgba(39, 0, 255, .45);
+  --hx-err: #ff5470;
+}
+
+html, body { background: var(--hx-bg) !important; }
+.app-container { background: var(--hx-bg); }
+
+.title-bar { background: var(--hx-surface); border-bottom: 1px solid var(--hx-border); }
+.logo { background: var(--hx-accent); color: #fff; }
+
+.settings-card, .domains-card, .logs-card, .info-card,
+.strategy-progress, .error-card, .tg-card {
+  background: var(--hx-surface);
+  border: 1px solid var(--hx-border);
+}
+
+.connect-btn {
+  background: var(--hx-accent);
+  color: #fff;
+  border: 0;
+  box-shadow: 0 0 24px -6px var(--hx-glow);
+}
+.connect-btn.connected {
+  background: transparent;
+  border: 1px solid var(--hx-accent);
+  color: var(--hx-accent-text);
+}
+
+.toggle input:checked + .toggle-slider { background: var(--hx-accent); }
+.strategy-progress-fill, .progress-fill { background: var(--hx-accent); }
+.link-btn, .tg-link { color: var(--hx-accent-text); }
+
+/* реклама VPN-бота автора оригинала */
+#promoCard { display: none; }
+
+/* карточка Telegram */
+.tg-card { padding: 14px 16px; border-radius: 14px; margin-top: 12px; transition: border-color .2s, box-shadow .2s; }
+.tg-card.on { border-color: var(--hx-accent); box-shadow: 0 0 22px -8px var(--hx-glow); }
+.tg-card.err .setting-desc { color: var(--hx-err); }
+.tg-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.tg-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.tg-card .link-btn { margin-top: 10px; }

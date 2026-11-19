@@ -5,6 +5,7 @@ temp/
 bin/darwin/
 bin/win32/
 lists/
+tgblock-bin/
 *.tgz
 
 .env

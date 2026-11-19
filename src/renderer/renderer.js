@@ -674,7 +674,7 @@ function handleUpdateStatus(data) {
   switch (status) {
     case 'manual-available':
       updateDownloadedVersion = version;
-      manualUpdateUrl = 'https://github.com/by-sonic/unblock-pro/releases/latest';
+      manualUpdateUrl = 'https://github.com/hexcode128/HexorcistZapret/releases/latest';
       updateBanner.style.display = 'flex';
       updateBanner.classList.remove('downloading');
       updateText.textContent = `Доступно обновление v${version}`;

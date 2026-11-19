@@ -1,0 +1,1507 @@
+﻿
+===== package.json =====
+
+{
+  "name": "unblock-pro",
+  "version": "2.0.30",
+  "description": "РћР±С…РѕРґ Р±Р»РѕРєРёСЂРѕРІРѕРє Discord Рё YouTube РІ Р РѕСЃСЃРёРё вЂ” Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРёР№ DPI bypass РґР»СЏ macOS Рё Windows",
+  "main": "src/main/main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test \"test/*.test.js\"",
+    "sync:flowseal": "node scripts/sync-flowseal-strategies.js",
+    "sync:hosts": "node scripts/sync-hosts-data.js",
+    "build:icons": "electron scripts/build-icons.js",
+    "build": "electron-builder",
+    "build:mac": "electron-builder --mac",
+    "build:win": "electron-builder --win",
+    "build:all": "electron-builder --mac --win",
+    "download-binaries": "node scripts/download-binaries.js"
+  },
+  "keywords": [
+    "discord",
+    "youtube",
+    "dpi",
+    "bypass",
+    "unblock",
+    "zapret",
+    "russia",
+    "censorship",
+    "proxy",
+    "vpn-alternative",
+    "anti-dpi",
+    "discord-unblock",
+    "youtube-unblock"
+  ],
+  "author": "sonic",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/by-sonic/unblock-pro"
+  },
+  "devDependencies": {
+    "electron": "43.7.3",
+    "electron-builder": "^26.7.0"
+  },
+  "dependencies": {
+    "@vscode/sudo-prompt": "9.3.2",
+    "electron-updater": "^6.7.3"
+  },
+  "build": {
+    "appId": "com.sonic.unblockpro",
+    "productName": "UnblockPro",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "bin/${platform}",
+        "to": "bin",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "scripts/uninstall-clean-hosts.ps1",
+        "to": "uninstall-clean-hosts.ps1"
+      }
+    ],
+    "mac": {
+      "minimumSystemVersion": "12.0.0",
+      "category": "public.app-category.utilities",
+      "icon": "assets/icon.icns",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "artifactName": "UnblockPro-${version}-mac-${arch}.${ext}"
+    },
+    "dmg": {
+      "artifactName": "UnblockPro-${version}-mac-${arch}.${ext}",
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    },
+    "win": {
+      "icon": "assets/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "requestedExecutionLevel": "requireAdministrator"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": true,
+      "include": "build/installer.nsh",
+      "artifactName": "UnblockPro-${version}-win-setup.${ext}"
+    },
+    "publish": {
+      "provider": "github",
+      "releaseType": "release"
+    }
+  }
+}
+
+
+===== src\main\preload.js =====
+
+const { contextBridge, ipcRenderer } = require('electron');
+
+contextBridge.exposeInMainWorld('api', {
+  // Proxy control
+  startProxy: () => ipcRenderer.invoke('start-proxy'),
+  stopProxy: () => ipcRenderer.invoke('stop-proxy'),
+  getStatus: () => ipcRenderer.invoke('get-status'),
+  
+  // Binary download
+  downloadBinaries: () => ipcRenderer.invoke('download-binaries'),
+  
+  // Window controls
+  minimizeWindow: () => ipcRenderer.invoke('minimize-window'),
+  closeWindow: () => ipcRenderer.invoke('close-window'),
+  
+  // System info
+  getSystemInfo: () => ipcRenderer.invoke('get-system-info'),
+  
+  // Settings
+  getSettings: () => ipcRenderer.invoke('get-settings'),
+  setAutoStart: (enabled) => ipcRenderer.invoke('set-auto-start', enabled),
+  setAutoConnect: (enabled) => ipcRenderer.invoke('set-auto-connect', enabled),
+  
+  // Strategy selection
+  getStrategies: () => ipcRenderer.invoke('get-strategies'),
+  setSelectedStrategy: (name) => ipcRenderer.invoke('set-selected-strategy', name),
+  setCustomTarget: (url) => ipcRenderer.invoke('set-custom-target', url),
+  setProxyPort: (port) => ipcRenderer.invoke('set-proxy-port', port),
+  
+  // Updates
+  installUpdate: () => ipcRenderer.invoke('install-update'),
+  checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
+  setAutoUpdate: (enabled) => ipcRenderer.invoke('set-auto-update', enabled),
+  
+  // Logs & errors
+  getLogs: () => ipcRenderer.invoke('get-logs'),
+  copyLogs: () => ipcRenderer.invoke('copy-logs'),
+  showLogFile: () => ipcRenderer.invoke('show-log-file'),
+  clearError: () => ipcRenderer.invoke('clear-error'),
+  
+  // Custom domains
+  getCustomDomains: () => ipcRenderer.invoke('get-custom-domains'),
+  setCustomDomains: (data) => ipcRenderer.invoke('set-custom-domains', data),
+
+  // External links
+  openExternal: (url) => ipcRenderer.invoke('open-external', url),
+  updateHostsForDiscord: () => ipcRenderer.invoke('update-hosts-for-discord'),
+  cleanHosts: () => ipcRenderer.invoke('clean-hosts'),
+  clearDiscordCache: () => ipcRenderer.invoke('clear-discord-cache'),
+  
+  // Event listeners
+  onStatus: (callback) => {
+    ipcRenderer.on('status', (event, data) => callback(data));
+  },
+  onDownloadProgress: (callback) => {
+    ipcRenderer.on('download-progress', (event, data) => callback(data));
+  },
+  onUpdateStatus: (callback) => {
+    ipcRenderer.on('update-status', (event, data) => callback(data));
+  },
+  onUpdateDownloadProgress: (callback) => {
+    ipcRenderer.on('update-download-progress', (event, data) => callback(data));
+  },
+  onLogEntry: (callback) => {
+    ipcRenderer.on('log-entry', (event, data) => callback(data));
+  }
+});
+
+
+===== src\renderer\index.html =====
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- img-src allows data: because the strategy dropdown draws its arrow from an
+       inline SVG. Without it the policy blocked the image and the select rendered
+       with no arrow at all. Kept narrow: only images, and no remote origin. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;">
+  <title>UnblockPro</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Title bar -->
+    <div class="title-bar" id="titleBar">
+      <div class="title-text">
+        <span class="logo">U</span>
+        UnblockPro
+      </div>
+      <div class="window-controls">
+        <button class="window-btn minimize" id="minimizeBtn" title="РЎРІРµСЂРЅСѓС‚СЊ">
+          <svg width="12" height="12" viewBox="0 0 12 12">
+            <rect y="5" width="12" height="2" fill="currentColor"/>
+          </svg>
+        </button>
+        <button class="window-btn close" id="closeBtn" title="Р—Р°РєСЂС‹С‚СЊ">
+          <svg width="12" height="12" viewBox="0 0 12 12">
+            <path d="M1 1L11 11M11 1L1 11" stroke="currentColor" stroke-width="2"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Update banner -->
+    <div class="update-banner" id="updateBanner" style="display: none;">
+      <div class="update-info">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2v8m0 0l3-3m-3 3L9 7M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span id="updateText">РћР±РЅРѕРІР»РµРЅРёРµ РґРѕСЃС‚СѓРїРЅРѕ</span>
+      </div>
+      <button type="button" class="update-btn" id="updateBtn" title="РџРµСЂРµР·Р°РїСѓСЃС‚РёС‚СЊ РґР»СЏ СѓСЃС‚Р°РЅРѕРІРєРё">РЈСЃС‚Р°РЅРѕРІРёС‚СЊ</button>
+    </div>
+
+    <!-- RoseVPN promo (СЃРІРµСЂС…Сѓ вЂ” РІРёРґСЏС‚ РІСЃРµ) -->
+    <div class="promo-card" id="promoCard">
+      <div class="promo-badge">Р РµРєРѕРјРµРЅРґСѓРµРј</div>
+      <div class="promo-content">
+        <div class="promo-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+            <path d="M12 2L3 7v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-9-5z" stroke="url(#promoGrad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M9 12l2 2 4-4" stroke="url(#promoGrad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <defs>
+              <linearGradient id="promoGrad" x1="3" y1="2" x2="21" y2="22" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#3b82f6"/>
+                <stop offset="1" stop-color="#06b6d4"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="promo-text">
+          <div class="promo-title">RoseVPN</div>
+          <div class="promo-desc">РџРѕР»РЅР°СЏ Р·Р°С‰РёС‚Р° С‚СЂР°С„РёРєР° СЃ С€РёС„СЂРѕРІР°РЅРёРµРј. UnblockPro РѕР±С…РѕРґРёС‚ Р±Р»РѕРєРёСЂРѕРІРєРё, Р° VPN вЂ” С€РёС„СЂСѓРµС‚ РІСЃС‘ СЃРѕРµРґРёРЅРµРЅРёРµ.</div>
+        </div>
+      </div>
+      <button type="button" class="promo-btn" id="promoBtn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" stroke-width="2"/>
+          <path d="M10 8l6 4-6 4V8z" fill="currentColor"/>
+        </svg>
+        РџРѕРїСЂРѕР±РѕРІР°С‚СЊ Р±РµСЃРїР»Р°С‚РЅРѕ
+      </button>
+    </div>
+
+    <!-- Main content -->
+    <div class="main-content">
+      <!-- Status section -->
+      <div class="status-section">
+        <div class="status-indicator" id="statusIndicator">
+          <div class="status-ring">
+            <div class="status-dot"></div>
+          </div>
+          <div class="status-pulse"></div>
+        </div>
+        <div class="status-text" id="statusText">РћС‚РєР»СЋС‡РµРЅРѕ</div>
+        <div class="status-strategy" id="strategyText"></div>
+        <!-- Connection timer -->
+        <div class="connection-timer" id="connectionTimer" style="display: none;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+            <path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <span id="timerText">0:00:00</span>
+        </div>
+        <!-- Service badges -->
+        <div class="service-badges" id="serviceBadges" style="display: none;">
+          <span class="service-badge discord" id="badgeDiscord">
+            <svg width="16" height="12" viewBox="0 0 71 55" fill="currentColor">
+              <path d="M60.1 4.9A58.5 58.5 0 0045.4.2a.2.2 0 00-.2.1 40.8 40.8 0 00-1.8 3.7 54 54 0 00-16.2 0A37.4 37.4 0 0025.4.3a.2.2 0 00-.2-.1A58.4 58.4 0 0010.5 5a.2.2 0 00-.1 0C1.5 18.7-.9 32 .3 45.2v.1a58.7 58.7 0 0017.7 9 .2.2 0 00.3-.1 42 42 0 003.6-5.9.2.2 0 00-.1-.3 38.7 38.7 0 01-5.5-2.6.2.2 0 01 0-.4l1.1-.9a.2.2 0 01.2 0 41.9 41.9 0 0035.6 0 .2.2 0 01.2 0l1.1.9a.2.2 0 010 .3 36.3 36.3 0 01-5.5 2.7.2.2 0 00-.1.3 47.2 47.2 0 003.6 5.9.2.2 0 00.3.1A58.5 58.5 0 0070.3 45.3v-.1C71.7 30.1 67.8 17 60.2 5a.2.2 0 000 0zM23.7 37.1c-3.5 0-6.4-3.2-6.4-7.1s2.8-7.1 6.4-7.1 6.5 3.2 6.4 7.1c0 3.9-2.8 7.1-6.4 7.1zm23.6 0c-3.5 0-6.4-3.2-6.4-7.1s2.8-7.1 6.4-7.1 6.5 3.2 6.4 7.1c0 3.9-2.9 7.1-6.4 7.1z"/>
+            </svg>
+            Discord
+          </span>
+          <span class="service-badge youtube" id="badgeYoutube">
+            <svg width="16" height="12" viewBox="0 0 24 18" fill="currentColor">
+              <path d="M23.5 2.8A3 3 0 0021.4.7C19.5.2 12 .2 12 .2S4.5.2 2.6.7A3 3 0 00.5 2.8 31.4 31.4 0 000 9a31.4 31.4 0 00.5 6.2A3 3 0 002.6 17.3c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 002.1-2.1A31.4 31.4 0 0024 9a31.4 31.4 0 00-.5-6.2zM9.6 12.8V5.2L15.8 9l-6.2 3.8z"/>
+            </svg>
+            YouTube
+          </span>
+        </div>
+        <!-- Shown when only one of the two services could be unblocked -->
+        <div class="partial-note" id="partialNote" style="display: none;"></div>
+      </div>
+
+      <!-- Strategy progress -->
+      <div class="strategy-progress" id="strategyProgress" style="display: none;">
+        <div class="strategy-progress-header">
+          <span class="strategy-progress-text" id="strategyProgressText">РўРµСЃС‚РёСЂРѕРІР°РЅРёРµ СЃС‚СЂР°С‚РµРіРёРё...</span>
+          <span class="strategy-progress-count" id="strategyProgressCount">0/0</span>
+        </div>
+        <div class="strategy-progress-bar">
+          <div class="strategy-progress-fill" id="strategyProgressFill"></div>
+        </div>
+        <div class="strategy-progress-name" id="strategyProgressName"></div>
+      </div>
+
+      <!-- Error card -->
+      <div class="error-card" id="errorCard" style="display: none;">
+        <div class="error-card-content">
+          <div class="error-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+              <path d="M12 8v4m0 4h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="error-text">
+            <div class="error-title" id="errorTitle">РћС€РёР±РєР°</div>
+            <div class="error-message" id="errorMessage"></div>
+          </div>
+          <button class="error-dismiss" id="errorDismiss" title="Р—Р°РєСЂС‹С‚СЊ">
+            <svg width="14" height="14" viewBox="0 0 14 14">
+              <path d="M1 1L13 13M13 1L1 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+        <button class="retry-btn" id="retryBtn" style="display: none;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M1 4v6h6M23 20v-6h-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M20.5 9A9 9 0 005.6 5.6L1 10m22 4l-4.6 4.4A9 9 0 013.5 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          РџРѕРІС‚РѕСЂРёС‚СЊ РїРѕРїС‹С‚РєСѓ
+        </button>
+      </div>
+
+      <!-- Download progress -->
+      <div class="download-section" id="downloadSection" style="display: none;">
+        <div class="download-text" id="downloadText">РЎРєР°С‡РёРІР°РЅРёРµ Р±РёРЅР°СЂРЅРёРєРѕРІ...</div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="download-percent" id="downloadPercent">0%</div>
+      </div>
+
+      <!-- Connect button -->
+      <button class="connect-btn" id="connectBtn">
+        <span class="btn-text">РџРѕРґРєР»СЋС‡РёС‚СЊ</span>
+      </button>
+
+      <!-- Custom domains -->
+      <div class="domains-card" id="domainsCard">
+        <button class="domains-header" id="domainsToggle">
+          <div class="domains-header-left">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+              <path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" stroke="currentColor" stroke-width="2"/>
+            </svg>
+            <span>РЎРІРѕРё РґРѕРјРµРЅС‹</span>
+          </div>
+          <svg class="domains-chevron" id="domainsChevron" width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        <div class="domains-body" id="domainsBody" style="display: none;">
+          <!-- Include domains -->
+          <div class="domain-section">
+            <div class="domain-section-header">
+              <div class="domain-section-title include">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 5v14m-7-7h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                Р Р°Р·Р±Р»РѕРєРёСЂРѕРІР°С‚СЊ
+              </div>
+              <span class="domain-section-hint">РћР±С…РѕРґ Р±СѓРґРµС‚ РїСЂРёРјРµРЅСЏС‚СЊСЃСЏ Рє СЌС‚РёРј РґРѕРјРµРЅР°Рј</span>
+            </div>
+            <div class="domain-list" id="includeList"></div>
+            <div class="domain-add-row">
+              <input type="text" class="domain-input" id="includeInput" placeholder="example.com" spellcheck="false">
+              <button class="domain-add-btn" id="includeAddBtn" title="Р”РѕР±Р°РІРёС‚СЊ РґРѕРјРµРЅ">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 5v14m-7-7h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <!-- Exclude domains -->
+          <div class="domain-section">
+            <div class="domain-section-header">
+              <div class="domain-section-title exclude">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <path d="M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                РСЃРєР»СЋС‡РёС‚СЊ
+              </div>
+              <span class="domain-section-hint">РћР±С…РѕРґ РќР• Р±СѓРґРµС‚ РїСЂРёРјРµРЅСЏС‚СЊСЃСЏ Рє СЌС‚РёРј РґРѕРјРµРЅР°Рј</span>
+            </div>
+            <div class="domain-list" id="excludeList"></div>
+            <div class="domain-add-row">
+              <input type="text" class="domain-input" id="excludeInput" placeholder="example.ru" spellcheck="false">
+              <button class="domain-add-btn exclude" id="excludeAddBtn" title="Р”РѕР±Р°РІРёС‚СЊ РґРѕРјРµРЅ">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 5v14m-7-7h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="domain-note">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+              <path d="M12 16V12M12 8H12.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            РџРµСЂРµРїРѕРґРєР»СЋС‡РёС‚РµСЃСЊ РїРѕСЃР»Рµ РёР·РјРµРЅРµРЅРёСЏ СЃРїРёСЃРєРѕРІ
+          </div>
+        </div>
+      </div>
+
+      <!-- Settings -->
+      <div class="settings-card">
+        <div class="setting-row">
+          <div class="setting-info">
+            <span class="setting-label">РЎС‚СЂР°С‚РµРіРёСЏ</span>
+            <span class="setting-desc">Р’С‹Р±РµСЂРёС‚Рµ РІСЂСѓС‡РЅСѓСЋ, РµСЃР»Рё Р°РІС‚Рѕ РЅРµ РїРѕРґРѕС€Р»Рѕ</span>
+          </div>
+          <select class="strategy-select" id="strategySelect">
+            <option value="auto">РђРІС‚РѕРїРѕРґР±РѕСЂ</option>
+          </select>
+        </div>
+        <div class="target-setting">
+          <label class="setting-label" for="targetUrl">РЎР°Р№С‚ РґР»СЏ РїРѕРґР±РѕСЂР° (РЅРµРѕР±СЏР·Р°С‚РµР»СЊРЅРѕ)</label>
+          <p class="setting-desc" id="targetHelp">РџСѓСЃС‚Рѕ вЂ” РїСЂРѕРІРµСЂСЏС‚СЊ YouTube Рё Discord. URL вЂ” РїРѕРґР±РёСЂР°С‚СЊ С‚РѕР»СЊРєРѕ РґР»СЏ СЌС‚РѕРіРѕ СЃР°Р№С‚Р°. HTTPS, РїРѕСЂС‚ 443; РѕС‚РІРµС‚ 2xx/3xx РѕР·РЅР°С‡Р°РµС‚ РґРѕСЃС‚СѓРїРЅРѕСЃС‚СЊ URL, Р° РЅРµ РІСЃРµС… С„СѓРЅРєС†РёР№ СЃР°Р№С‚Р°. РџРµСЂРµС…РѕРґС‹ РїРѕ СЂРµРґРёСЂРµРєС‚Р°Рј РЅРµ РїСЂРѕРІРµСЂСЏСЋС‚СЃСЏ.</p>
+          <input id="targetUrl" type="url" maxlength="2048" placeholder="https://example.com/" aria-describedby="targetHelp targetMessage" autocomplete="off" spellcheck="false">
+          <button id="saveTargetBtn" type="button" class="target-save">РЎРѕС…СЂР°РЅРёС‚СЊ СЃР°Р№С‚</button>
+          <p id="targetMessage" class="setting-desc" role="status" aria-live="polite"></p>
+        </div>
+        <div class="target-setting" id="portSetting" hidden>
+          <label class="setting-label" for="proxyPort">РџРѕСЂС‚ Р»РѕРєР°Р»СЊРЅРѕРіРѕ РїСЂРѕРєСЃРё</label>
+          <p class="setting-desc" id="portHelp">РџРѕРјРµРЅСЏР№С‚Рµ, РµСЃР»Рё 1080 Р·Р°РЅСЏС‚ РґСЂСѓРіРѕР№ РїСЂРѕРіСЂР°РјРјРѕР№. РџСѓСЃС‚Рѕ вЂ” 1080.</p>
+          <input id="proxyPort" type="number" min="1024" max="65535" placeholder="1080" aria-describedby="portHelp portMessage" autocomplete="off">
+          <button id="savePortBtn" type="button" class="target-save">РЎРѕС…СЂР°РЅРёС‚СЊ РїРѕСЂС‚</button>
+          <p id="portMessage" class="setting-desc" role="status" aria-live="polite"></p>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <span class="setting-label">РђРІС‚РѕР·Р°РїСѓСЃРє</span>
+            <span class="setting-desc">Р—Р°РїСѓСЃРєР°С‚СЊ РїСЂРё СЃС‚Р°СЂС‚Рµ СЃРёСЃС‚РµРјС‹</span>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="autostartToggle">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <span class="setting-label">РђРІС‚РѕРїРѕРґРєР»СЋС‡РµРЅРёРµ</span>
+            <span class="setting-desc">РџРѕРґРєР»СЋС‡Р°С‚СЊСЃСЏ РїСЂРё Р·Р°РїСѓСЃРєРµ</span>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="autoconnectToggle">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <span class="setting-label">РћР±РЅРѕРІР»СЏС‚СЊ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё</span>
+            <span class="setting-desc">Р’С‹РєР» вЂ” С‚РѕР»СЊРєРѕ СѓРІРµРґРѕРјР»СЏС‚СЊ, СЃС‚Р°РІРёС‚СЊ РІСЂСѓС‡РЅСѓСЋ</span>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="autoupdateToggle">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Logs panel -->
+      <div class="logs-card" id="logsCard">
+        <button class="logs-header" id="logsToggle">
+          <div class="logs-header-left">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M14 2v6h6M16 13H8m8 4H8m2-8H8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>Р–СѓСЂРЅР°Р»</span>
+            <span class="logs-count" id="logsCount">0</span>
+          </div>
+          <svg class="logs-chevron" id="logsChevron" width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        <div class="logs-body" id="logsBody" style="display: none;">
+          <div class="logs-list" id="logsList"></div>
+          <div class="logs-actions">
+            <button class="logs-action" id="logsCopy" title="РЎРєРѕРїРёСЂРѕРІР°С‚СЊ Р¶СѓСЂРЅР°Р» РІРјРµСЃС‚Рµ СЃ РІРµСЂСЃРёРµР№ РїСЂРёР»РѕР¶РµРЅРёСЏ Рё СЃРёСЃС‚РµРјС‹">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                <rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" stroke-width="2"/>
+                <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+              <span id="logsCopyLabel">РЎРєРѕРїРёСЂРѕРІР°С‚СЊ Р¶СѓСЂРЅР°Р»</span>
+            </button>
+            <button class="logs-action logs-action-ghost" id="logsReveal" title="РћС‚РєСЂС‹С‚СЊ РїР°РїРєСѓ СЃ С„Р°Р№Р»РѕРј Р¶СѓСЂРЅР°Р»Р°">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                <path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+              </svg>
+              <span>Р¤Р°Р№Р»</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Info card -->
+      <div class="info-card">
+        <div class="info-header">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" stroke-width="2"/>
+            <path d="M12 16V12M12 8H12.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <span>РљР°Рє СЌС‚Рѕ СЂР°Р±РѕС‚Р°РµС‚</span>
+        </div>
+        <div class="info-text">
+          РџСЂРёР»РѕР¶РµРЅРёРµ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё РЅР°С…РѕРґРёС‚ СЂР°Р±РѕС‡СѓСЋ СЃС‚СЂР°С‚РµРіРёСЋ РѕР±С…РѕРґР° DPI РґР»СЏ РІР°С€РµРіРѕ РїСЂРѕРІР°Р№РґРµСЂР° Рё СЂР°Р·Р±Р»РѕРєРёСЂСѓРµС‚ Discord, YouTube Рё РґСЂСѓРіРёРµ СЃРµСЂРІРёСЃС‹. Р’СЃРµ СЂР°Р±РѕС‚Р°РµС‚ Р»РѕРєР°Р»СЊРЅРѕ, Р±РµР· VPN-СЃРµСЂРІРµСЂРѕРІ.
+        </div>
+        <div class="info-actions">
+          <button type="button" class="link-btn" id="updateHostsBtn" title="РџСЂРѕРїРёСЃС‹РІР°РµС‚ Р°РґСЂРµСЃР° Discord, Telegram Рё GitHub РІ hosts РІ РѕР±С…РѕРґ РїРѕРґРјРµРЅС‹ DNS (РЅСѓР¶РЅС‹ РїСЂР°РІР° Р°РґРјРёРЅР°)">
+            РћР±РЅРѕРІРёС‚СЊ hosts
+          </button>
+          <button type="button" class="link-btn" id="clearDiscordCacheBtn" title="РћС‡РёСЃС‚РёС‚СЊ РєСЌС€ Discord">
+            РћС‡РёСЃС‚РёС‚СЊ РєСЌС€ Discord
+          </button>
+          <button type="button" class="link-btn" id="cleanHostsBtn" title="РЈР±РёСЂР°РµС‚ Р·Р°РїРёСЃРё Discord РёР· hosts вЂ” РЅСѓР¶РЅРѕ, РµСЃР»Рё РѕРЅРё РѕСЃС‚Р°Р»РёСЃСЊ РѕС‚ РїСЂРѕС€Р»С‹С… РІРµСЂСЃРёР№">
+            РЈР±СЂР°С‚СЊ Р·Р°РїРёСЃРё РёР· hosts
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <div class="system-info" id="systemInfo">
+        <span class="platform-badge" id="platformBadge">--</span>
+        <span class="version" id="versionText">v1.1.0</span>
+      </div>
+      <span class="credit">by sonic В· <a href="#" id="tgLink" class="tg-link">Telegram</a></span>
+      <div class="binary-status" id="binaryStatus">
+        <span class="binary-dot"></span>
+        <span class="binary-text">РџСЂРѕРІРµСЂРєР°...</span>
+      </div>
+    </div>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>
+
+
+===== src\renderer\renderer.js =====
+
+// DOM Elements
+const statusIndicator = document.getElementById('statusIndicator');
+const statusText = document.getElementById('statusText');
+const strategyText = document.getElementById('strategyText');
+const connectBtn = document.getElementById('connectBtn');
+const minimizeBtn = document.getElementById('minimizeBtn');
+const closeBtn = document.getElementById('closeBtn');
+const platformBadge = document.getElementById('platformBadge');
+const binaryStatus = document.getElementById('binaryStatus');
+const downloadSection = document.getElementById('downloadSection');
+const downloadText = document.getElementById('downloadText');
+const progressFill = document.getElementById('progressFill');
+const downloadPercent = document.getElementById('downloadPercent');
+const autostartToggle = document.getElementById('autostartToggle');
+const autoconnectToggle = document.getElementById('autoconnectToggle');
+const autoupdateToggle = document.getElementById('autoupdateToggle');
+const strategySelect = document.getElementById('strategySelect');
+const targetUrl = document.getElementById('targetUrl');
+const saveTargetBtn = document.getElementById('saveTargetBtn');
+const targetMessage = document.getElementById('targetMessage');
+const portSetting = document.getElementById('portSetting');
+const proxyPort = document.getElementById('proxyPort');
+const savePortBtn = document.getElementById('savePortBtn');
+const portMessage = document.getElementById('portMessage');
+let isSearching = false;
+
+async function saveCustomTarget() {
+  try {
+    const result = await window.api.setCustomTarget(targetUrl.value.trim());
+    targetUrl.setAttribute('aria-invalid', String(!result.success));
+    if (!result.success) { targetMessage.textContent = result.error; return false; }
+    targetUrl.value = result.url;
+    targetMessage.textContent = result.url ? 'РЎРѕС…СЂР°РЅРµРЅРѕ. РџСЂРё РїРѕРґРєР»СЋС‡РµРЅРёРё РїСЂРѕРІРµСЂСЏРµС‚СЃСЏ С‚РѕР»СЊРєРѕ СЌС‚РѕС‚ URL.' : 'РЎРѕС…СЂР°РЅРµРЅРѕ. РџСЂРѕРІРµСЂСЏСЋС‚СЃСЏ YouTube Рё Discord.';
+    return true;
+  } catch (e) { targetMessage.textContent = e.message; return false; }
+}
+
+async function saveProxyPort() {
+  try {
+    const result = await window.api.setProxyPort(proxyPort.value.trim());
+    proxyPort.setAttribute('aria-invalid', String(!result.success));
+    if (!result.success) { portMessage.textContent = result.error; return; }
+    proxyPort.value = result.port;
+    portMessage.textContent = `РЎРѕС…СЂР°РЅРµРЅРѕ. РџРѕСЂС‚ ${result.port} Р·Р°СЂР°Р±РѕС‚Р°РµС‚ РїСЂРё СЃР»РµРґСѓСЋС‰РµРј РїРѕРґРєР»СЋС‡РµРЅРёРё.`;
+  } catch (e) { portMessage.textContent = e.message; }
+}
+
+// New UI elements
+const connectionTimer = document.getElementById('connectionTimer');
+const timerText = document.getElementById('timerText');
+const serviceBadges = document.getElementById('serviceBadges');
+const badgeDiscord = document.getElementById('badgeDiscord');
+const badgeYoutube = document.getElementById('badgeYoutube');
+const partialNote = document.getElementById('partialNote');
+const strategyProgress = document.getElementById('strategyProgress');
+const strategyProgressText = document.getElementById('strategyProgressText');
+const strategyProgressCount = document.getElementById('strategyProgressCount');
+const strategyProgressFill = document.getElementById('strategyProgressFill');
+const strategyProgressName = document.getElementById('strategyProgressName');
+const errorCard = document.getElementById('errorCard');
+const errorTitle = document.getElementById('errorTitle');
+const errorMessage = document.getElementById('errorMessage');
+const errorDismiss = document.getElementById('errorDismiss');
+const retryBtn = document.getElementById('retryBtn');
+const logsCard = document.getElementById('logsCard');
+const logsToggle = document.getElementById('logsToggle');
+const logsChevron = document.getElementById('logsChevron');
+const logsBody = document.getElementById('logsBody');
+const logsList = document.getElementById('logsList');
+const logsCount = document.getElementById('logsCount');
+const logsCopy = document.getElementById('logsCopy');
+const logsCopyLabel = document.getElementById('logsCopyLabel');
+const logsReveal = document.getElementById('logsReveal');
+
+// Custom domains elements
+const domainsToggle = document.getElementById('domainsToggle');
+const domainsChevron = document.getElementById('domainsChevron');
+const domainsBody = document.getElementById('domainsBody');
+const includeList = document.getElementById('includeList');
+const excludeList = document.getElementById('excludeList');
+const includeInput = document.getElementById('includeInput');
+const excludeInput = document.getElementById('excludeInput');
+const includeAddBtn = document.getElementById('includeAddBtn');
+const excludeAddBtn = document.getElementById('excludeAddBtn');
+
+// State
+let isConnected = false;
+let isConnecting = false;
+let isDownloading = false;
+let timerInterval = null;
+let connectedSinceTime = null;
+let logsOpen = false;
+let logCount = 0;
+let domainsOpen = false;
+let customIncludeDomains = [];
+let customExcludeDomains = [];
+
+// Update elements
+const updateBanner = document.getElementById('updateBanner');
+const updateText = document.getElementById('updateText');
+const updateBtn = document.getElementById('updateBtn');
+
+// Error code to user-friendly title mapping
+const ERROR_TITLES = {
+  'BINARY_RUNTIME_FAILED': 'РћС€РёР±РєР° РїСЂРѕС†РµСЃСЃР° tpws',
+  'NO_BINARY': 'Р‘РёРЅР°СЂРЅРёРє РЅРµ РЅР°Р№РґРµРЅ',
+  'DOWNLOAD_FAILED': 'РћС€РёР±РєР° СЃРєР°С‡РёРІР°РЅРёСЏ',
+  'ALL_STRATEGIES_FAILED': 'РЎС‚СЂР°С‚РµРіРёРё РЅРµ СЃСЂР°Р±РѕС‚Р°Р»Рё',
+  'PROCESS_CRASHED': 'РџСЂРѕС†РµСЃСЃ Р·Р°РІРµСЂС€РёР»СЃСЏ',
+  'PERMISSION_DENIED': 'РќРµС‚ РїСЂР°РІ РґРѕСЃС‚СѓРїР°',
+  'PORT_IN_USE': 'РџРѕСЂС‚ Р·Р°РЅСЏС‚',
+  'NETWORK_UNAVAILABLE': 'РќРµС‚ СЃРµС‚Рё',
+  'ALREADY_RUNNING': 'РЈР¶Рµ РїРѕРґРєР»СЋС‡РµРЅРѕ',
+  'RUNTIME_INTEGRITY': 'Р¤Р°Р№Р»С‹ РґРІРёР¶РєР° РёР·РјРµРЅРµРЅС‹'
+};
+
+// Initialize
+async function init() {
+  if (typeof window.api === 'undefined') {
+    const statusTextEl = document.getElementById('statusText');
+    const binaryTextEl = binaryStatus && binaryStatus.querySelector('.binary-text');
+    if (statusTextEl) statusTextEl.textContent = 'РћС€РёР±РєР°: РїСЂРёР»РѕР¶РµРЅРёРµ РЅРµ РёРЅРёС†РёР°Р»РёР·РёСЂРѕРІР°РЅРѕ';
+    if (binaryTextEl) binaryTextEl.textContent = 'РџРµСЂРµР·Р°РїСѓСЃС‚РёС‚Рµ РїСЂРёР»РѕР¶РµРЅРёРµ';
+    return;
+  }
+  try {
+    setupEventListeners();
+    await Promise.race([
+      Promise.all([
+        loadSystemInfo(),
+        loadStrategies(),
+        loadStatus(),
+        loadSettings(),
+        loadLogs(),
+        loadCustomDomains()
+      ]),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 15000))
+    ]);
+  } catch (e) {
+    const binaryTextEl = binaryStatus && binaryStatus.querySelector('.binary-text');
+    if (binaryTextEl) binaryTextEl.textContent = 'Р“РѕС‚РѕРІ';
+    updateBinaryStatus(false);
+  }
+  if (typeof window.api === 'undefined') return;
+  window.api.onStatus(handleStatusUpdate);
+  window.api.onDownloadProgress(handleDownloadProgress);
+  window.api.onUpdateStatus(handleUpdateStatus);
+  window.api.onUpdateDownloadProgress(handleUpdateDownloadProgress);
+  window.api.onLogEntry(handleLogEntry);
+  updateBtn?.addEventListener('click', handleUpdateBtnClick);
+}
+
+function setupEventListeners() {
+  minimizeBtn.addEventListener('click', () => window.api.minimizeWindow());
+  closeBtn.addEventListener('click', () => window.api.closeWindow());
+  connectBtn.addEventListener('click', handleConnectClick);
+  saveTargetBtn.addEventListener('click', saveCustomTarget);
+  
+  autostartToggle.addEventListener('change', async () => {
+    await window.api.setAutoStart(autostartToggle.checked);
+  });
+  
+  autoconnectToggle.addEventListener('change', async () => {
+    await window.api.setAutoConnect(autoconnectToggle.checked);
+  });
+
+  autoupdateToggle.addEventListener('change', async () => {
+    await window.api.setAutoUpdate(autoupdateToggle.checked);
+  });
+  
+  // Strategy selector
+  strategySelect.addEventListener('change', async () => {
+    await window.api.setSelectedStrategy(strategySelect.value);
+  });
+  
+  // Error card dismiss
+  errorDismiss.addEventListener('click', () => {
+    hideError();
+    window.api.clearError();
+  });
+  
+  // Retry button
+  retryBtn.addEventListener('click', async () => {
+    hideError();
+    window.api.clearError();
+    handleConnectClick();
+  });
+  
+  // Domains toggle
+  domainsToggle.addEventListener('click', () => {
+    domainsOpen = !domainsOpen;
+    domainsBody.style.display = domainsOpen ? 'block' : 'none';
+    domainsChevron.classList.toggle('open', domainsOpen);
+  });
+
+  // Domain add buttons
+  includeAddBtn.addEventListener('click', () => addDomain('include'));
+  excludeAddBtn.addEventListener('click', () => addDomain('exclude'));
+  includeInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') addDomain('include'); });
+  excludeInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') addDomain('exclude'); });
+
+  // Logs toggle
+  logsToggle.addEventListener('click', () => {
+    logsOpen = !logsOpen;
+    logsBody.style.display = logsOpen ? 'block' : 'none';
+    logsChevron.classList.toggle('open', logsOpen);
+    
+    // Scroll to bottom when opening
+    if (logsOpen) {
+      logsList.scrollTop = logsList.scrollHeight;
+    }
+  });
+
+  logsCopy.addEventListener('click', copyLogs);
+  logsReveal.addEventListener('click', () => window.api.showLogFile());
+}
+
+// Restores the button label after the confirmation flash, so a second copy
+// still reads as a fresh action.
+let copyResetTimer = null;
+
+function flashCopyResult(label, stateClass) {
+  logsCopyLabel.textContent = label;
+  logsCopy.classList.remove('is-done', 'is-failed');
+  if (stateClass) logsCopy.classList.add(stateClass);
+
+  clearTimeout(copyResetTimer);
+  copyResetTimer = setTimeout(() => {
+    logsCopyLabel.textContent = 'РЎРєРѕРїРёСЂРѕРІР°С‚СЊ Р¶СѓСЂРЅР°Р»';
+    logsCopy.classList.remove('is-done', 'is-failed');
+  }, 2000);
+}
+
+async function copyLogs() {
+  try {
+    const result = await window.api.copyLogs();
+    if (result && result.success) {
+      flashCopyResult('РЎРєРѕРїРёСЂРѕРІР°РЅРѕ', 'is-done');
+    } else {
+      flashCopyResult('РќРµ СѓРґР°Р»РѕСЃСЊ СЃРєРѕРїРёСЂРѕРІР°С‚СЊ', 'is-failed');
+    }
+  } catch (e) {
+    flashCopyResult('РќРµ СѓРґР°Р»РѕСЃСЊ СЃРєРѕРїРёСЂРѕРІР°С‚СЊ', 'is-failed');
+  }
+}
+
+async function loadSystemInfo() {
+  try {
+    const info = await window.api.getSystemInfo();
+    
+    const platformNames = {
+      darwin: 'macOS',
+      win32: 'Windows',
+      linux: 'Linux'
+    };
+    
+    platformBadge.textContent = platformNames[info.platform] || info.platform;
+    // Only tpws on macOS listens on a port; winws works inside the network stack.
+    portSetting.hidden = info.platform !== 'darwin';
+    
+    const versionEl = document.getElementById('versionText');
+    if (versionEl && info.version) versionEl.textContent = `v${info.version}`;
+    
+    updateBinaryStatus(info.binaryExists);
+  } catch (error) {
+    // silently handle
+  }
+}
+
+function updateBinaryStatus(exists, downloading = false) {
+  const binaryTextEl = binaryStatus.querySelector('.binary-text');
+  
+  binaryStatus.classList.remove('ready', 'error', 'downloading');
+  
+  if (downloading) {
+    binaryStatus.classList.add('downloading');
+    binaryTextEl.textContent = 'РЎРєР°С‡РёРІР°РЅРёРµ...';
+  } else if (exists) {
+    binaryStatus.classList.add('ready');
+    binaryTextEl.textContent = 'Р“РѕС‚РѕРІ';
+  } else {
+    binaryStatus.classList.add('error');
+    binaryTextEl.textContent = 'РќРµС‚ Р±РёРЅР°СЂРЅРёРєР°';
+  }
+}
+
+async function loadStatus() {
+  try {
+    const status = await window.api.getStatus();
+    handleStatusUpdate(status);
+  } catch (error) {
+    // silently handle
+  }
+}
+
+async function loadStrategies() {
+  try {
+    const strategies = await window.api.getStrategies();
+    // Clear existing options except "РђРІС‚РѕРїРѕРґР±РѕСЂ"
+    strategySelect.innerHTML = '<option value="auto">РђРІС‚РѕРїРѕРґР±РѕСЂ</option>';
+    for (const name of strategies) {
+      const option = document.createElement('option');
+      option.value = name;
+      option.textContent = name;
+      strategySelect.appendChild(option);
+    }
+  } catch (error) {
+    // silently handle вЂ” dropdown will just show "РђРІС‚РѕРїРѕРґР±РѕСЂ"
+  }
+}
+
+async function loadSettings() {
+  try {
+    const settings = await window.api.getSettings();
+    targetUrl.value = settings.customTargetUrl || '';
+    proxyPort.value = settings.proxyPort || '';
+    autostartToggle.checked = settings.autoStart || false;
+    autoconnectToggle.checked = settings.autoConnect || false;
+    autoupdateToggle.checked = settings.autoUpdate !== false;
+    
+    // Set strategy selector
+    if (settings.selectedStrategy && settings.selectedStrategy !== 'auto') {
+      strategySelect.value = settings.selectedStrategy;
+    } else {
+      strategySelect.value = 'auto';
+    }
+  } catch (error) {
+    // silently handle
+  }
+}
+
+async function loadLogs() {
+  try {
+    const logs = await window.api.getLogs();
+    if (logs && logs.length > 0) {
+      logs.forEach(entry => addLogEntry(entry));
+    }
+  } catch (error) {
+    // silently handle
+  }
+}
+
+function handleStatusUpdate(status) {
+  isConnected = status.connected;
+  isDownloading = status.downloading;
+  isSearching = status.searching === true;
+  targetUrl.disabled = isConnected || isSearching || isDownloading;
+  saveTargetBtn.disabled = targetUrl.disabled;
+  proxyPort.disabled = targetUrl.disabled;
+  savePortBtn.disabled = targetUrl.disabled;
+  
+  // When backend confirms connected, clear local connecting state
+  if (isConnected) {
+    isConnecting = false;
+  }
+  
+  // Update status indicator
+  statusIndicator.classList.remove('connected', 'connecting', 'searching', 'downloading', 'error', 'partial');
+  connectBtn.classList.remove('connected', 'connecting', 'downloading');
+  statusText.classList.remove('error-text');
+  
+  if (isDownloading) {
+    statusIndicator.classList.add('downloading');
+    statusText.textContent = 'РЎРєР°С‡РёРІР°РЅРёРµ...';
+    connectBtn.classList.add('downloading');
+    connectBtn.querySelector('.btn-text').textContent = 'РЎРєР°С‡РёРІР°РЅРёРµ...';
+    downloadSection.style.display = 'block';
+    updateBinaryStatus(false, true);
+    hideStrategyProgress();
+    hideConnectionTimer();
+    hideServiceBadges();
+  } else if (status.searching) {
+    statusIndicator.classList.add('searching');
+    statusText.textContent = 'РџРѕРёСЃРє СЃС‚СЂР°С‚РµРіРёРё...';
+    connectBtn.classList.add('connecting');
+    connectBtn.querySelector('.btn-text').textContent = 'РћС‚РјРµРЅРёС‚СЊ РїРѕРґР±РѕСЂ';
+    downloadSection.style.display = 'none';
+    hideConnectionTimer();
+    hideServiceBadges();
+    
+    // Show strategy progress
+    if (status.strategyProgress) {
+      showStrategyProgress(status.strategyProgress);
+    }
+  } else if (isConnected) {
+    statusIndicator.classList.add('connected');
+    statusText.textContent = 'Р—Р°С‰РёС‚Р° Р°РєС‚РёРІРЅР°';
+    connectBtn.classList.add('connected');
+    connectBtn.querySelector('.btn-text').textContent = 'РћС‚РєР»СЋС‡РёС‚СЊ';
+    downloadSection.style.display = 'none';
+    hideStrategyProgress();
+    hideError();
+    showServiceBadges(status.outcome);
+    if (status.outcome && status.outcome.level === 'partial') {
+      statusIndicator.classList.add('partial');
+      statusText.textContent = 'Р—Р°С‰РёС‚Р° С‡Р°СЃС‚РёС‡РЅР°СЏ';
+    }
+    
+    // Start connection timer
+    if (status.connectedSince) {
+      startConnectionTimer(status.connectedSince);
+    }
+  } else if (isConnecting) {
+    statusIndicator.classList.add('connecting');
+    statusText.textContent = 'РџРѕРґРєР»СЋС‡РµРЅРёРµ...';
+    connectBtn.classList.add('connecting');
+    connectBtn.querySelector('.btn-text').textContent = 'РџРѕРґРєР»СЋС‡РµРЅРёРµ...';
+    downloadSection.style.display = 'none';
+    hideConnectionTimer();
+    hideServiceBadges();
+  } else {
+    // Disconnected state
+    downloadSection.style.display = 'none';
+    hideStrategyProgress();
+    hideConnectionTimer();
+    hideServiceBadges();
+    
+    // Check for errors
+    if (status.error || status.errorCode) {
+      statusIndicator.classList.add('error');
+      statusText.textContent = 'РћС€РёР±РєР°';
+      statusText.classList.add('error-text');
+      connectBtn.querySelector('.btn-text').textContent = 'РџРѕРґРєР»СЋС‡РёС‚СЊ';
+      showError(status.errorCode, status.error);
+    } else if (status.disconnectReason) {
+      statusIndicator.classList.add('error');
+      statusText.textContent = 'РћС‚РєР»СЋС‡РµРЅРѕ';
+      connectBtn.querySelector('.btn-text').textContent = 'РџРѕРґРєР»СЋС‡РёС‚СЊ';
+      showDisconnectReason(status.disconnectReason);
+    } else {
+      statusText.textContent = 'РћС‚РєР»СЋС‡РµРЅРѕ';
+      connectBtn.querySelector('.btn-text').textContent = 'РџРѕРґРєР»СЋС‡РёС‚СЊ';
+    }
+  }
+  
+  // Update strategy text
+  if (status.strategy) {
+    strategyText.textContent = `РЎС‚СЂР°С‚РµРіРёСЏ: ${status.strategy}`;
+  } else if (status.strategyProgress && status.strategyProgress.name) {
+    strategyText.textContent = '';
+  } else {
+    strategyText.textContent = '';
+  }
+  
+  // Update binary status
+  if (!isDownloading) {
+    updateBinaryStatus(status.binaryExists);
+  }
+}
+
+// ============= Strategy Progress =============
+
+function showStrategyProgress(progress) {
+  strategyProgress.style.display = 'block';
+  strategyProgressText.textContent = 'РўРµСЃС‚РёСЂРѕРІР°РЅРёРµ СЃС‚СЂР°С‚РµРіРёРё...';
+  strategyProgressCount.textContent = `${progress.current}/${progress.total}`;
+  strategyProgressName.textContent = progress.name || '';
+  
+  const percent = Math.round((progress.current / progress.total) * 100);
+  strategyProgressFill.style.width = `${percent}%`;
+}
+
+function hideStrategyProgress() {
+  strategyProgress.style.display = 'none';
+}
+
+// ============= Connection Timer =============
+
+function startConnectionTimer(sinceTimestamp) {
+  connectedSinceTime = sinceTimestamp;
+  connectionTimer.style.display = 'flex';
+  updateTimerDisplay();
+  
+  if (timerInterval) clearInterval(timerInterval);
+  timerInterval = setInterval(updateTimerDisplay, 1000);
+}
+
+function hideConnectionTimer() {
+  connectionTimer.style.display = 'none';
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+  connectedSinceTime = null;
+}
+
+function updateTimerDisplay() {
+  if (!connectedSinceTime) return;
+  
+  const elapsed = Math.floor((Date.now() - connectedSinceTime) / 1000);
+  const hours = Math.floor(elapsed / 3600);
+  const minutes = Math.floor((elapsed % 3600) / 60);
+  const seconds = elapsed % 60;
+  
+  timerText.textContent = `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
+
+// ============= Service Badges =============
+
+const SERVICE_HINTS = {
+  discord: 'Discord Сѓ РІР°С€РµРіРѕ РїСЂРѕРІР°Р№РґРµСЂР° РїРѕРґРЅСЏС‚СЊ РЅРµ СѓРґР°Р»РѕСЃСЊ вЂ” РЅРё РѕРґРЅР° СЃС‚СЂР°С‚РµРіРёСЏ РµРіРѕ РЅРµ РѕС‚РєСЂС‹Р»Р°. YouTube РїСЂРё СЌС‚РѕРј СЂР°Р±РѕС‚Р°РµС‚.',
+  youtube: 'YouTube Сѓ РІР°С€РµРіРѕ РїСЂРѕРІР°Р№РґРµСЂР° РїРѕРґРЅСЏС‚СЊ РЅРµ СѓРґР°Р»РѕСЃСЊ вЂ” РЅРё РѕРґРЅР° СЃС‚СЂР°С‚РµРіРёСЏ РµРіРѕ РЅРµ РѕС‚РєСЂС‹Р»Р°. Discord РїСЂРё СЌС‚РѕРј СЂР°Р±РѕС‚Р°РµС‚.'
+};
+
+// `outcome` is absent on older states and on a full connection; both mean "РІСЃС‘
+// СЂР°Р±РѕС‚Р°РµС‚", so the badges stay as they are.
+function showServiceBadges(outcome) {
+  if (outcome && outcome.targetUrl) {
+    serviceBadges.style.display = 'none';
+    partialNote.textContent = `Р’С‹Р±СЂР°РЅРЅС‹Р№ СЃР°Р№С‚ РґРѕСЃС‚СѓРїРµРЅ (${new URL(outcome.targetUrl).hostname}). YouTube Рё Discord РЅРµ РїСЂРѕРІРµСЂСЏР»РёСЃСЊ.`;
+    partialNote.style.display = 'block';
+    return;
+  }
+  serviceBadges.style.display = 'flex';
+
+  const services = (outcome && outcome.services) || { discord: true, youtube: true };
+  badgeDiscord.classList.toggle('is-blocked', services.discord === false);
+  badgeYoutube.classList.toggle('is-blocked', services.youtube === false);
+
+  const blocked = Object.keys(SERVICE_HINTS).filter((name) => services[name] === false);
+  if (blocked.length === 1) {
+    partialNote.textContent = SERVICE_HINTS[blocked[0]];
+    partialNote.style.display = 'block';
+  } else {
+    partialNote.style.display = 'none';
+  }
+}
+
+function hideServiceBadges() {
+  serviceBadges.style.display = 'none';
+  partialNote.style.display = 'none';
+  badgeDiscord.classList.remove('is-blocked');
+  badgeYoutube.classList.remove('is-blocked');
+}
+
+// ============= Error Display =============
+
+function showError(errorCode, errorMsg) {
+  errorCard.style.display = 'block';
+  
+  const title = ERROR_TITLES[errorCode] || 'РћС€РёР±РєР° РїРѕРґРєР»СЋС‡РµРЅРёСЏ';
+  errorTitle.textContent = title;
+  errorMessage.textContent = errorMsg || 'РџСЂРѕРёР·РѕС€Р»Р° РЅРµРёР·РІРµСЃС‚РЅР°СЏ РѕС€РёР±РєР°';
+  
+  // Show retry button for recoverable errors
+  const retryable = ['ALL_STRATEGIES_FAILED', 'PROCESS_CRASHED', 'DOWNLOAD_FAILED', 'NETWORK_UNAVAILABLE'];
+  retryBtn.style.display = retryable.includes(errorCode) ? 'flex' : 'none';
+}
+
+function showDisconnectReason(reason) {
+  const reasons = {
+    'PROCESS_CRASHED': 'РџСЂРѕС†РµСЃСЃ РѕР±С…РѕРґР° Р·Р°РІРµСЂС€РёР»СЃСЏ РЅРµРѕР¶РёРґР°РЅРЅРѕ. РџРѕРїСЂРѕР±СѓР№С‚Рµ РїРѕРґРєР»СЋС‡РёС‚СЊСЃСЏ СЃРЅРѕРІР°.',
+    'PROCESS_EXITED': 'РџСЂРѕС†РµСЃСЃ РѕР±С…РѕРґР° РѕСЃС‚Р°РЅРѕРІРёР»СЃСЏ. РџРѕРїСЂРѕР±СѓР№С‚Рµ РїРѕРґРєР»СЋС‡РёС‚СЊСЃСЏ СЃРЅРѕРІР°.'
+  };
+  
+  const msg = reasons[reason] || 'РЎРѕРµРґРёРЅРµРЅРёРµ Р±С‹Р»Рѕ РїСЂРµСЂРІР°РЅРѕ';
+  showError(reason, msg);
+}
+
+function hideError() {
+  errorCard.style.display = 'none';
+}
+
+// ============= Logs =============
+
+function handleLogEntry(entry) {
+  addLogEntry(entry);
+}
+
+function addLogEntry(entry) {
+  logCount++;
+  logsCount.textContent = logCount;
+  
+  const el = document.createElement('div');
+  el.className = `log-entry ${entry.type || 'info'}`;
+  
+  const time = new Date(entry.timestamp);
+  const timeStr = `${String(time.getHours()).padStart(2, '0')}:${String(time.getMinutes()).padStart(2, '0')}:${String(time.getSeconds()).padStart(2, '0')}`;
+  
+  el.innerHTML = `
+    <span class="log-time">${timeStr}</span>
+    <span class="log-dot"></span>
+    <span class="log-message">${escapeHtml(entry.message)}</span>
+  `;
+  
+  logsList.appendChild(el);
+  
+  // Keep only last 100 entries in DOM
+  while (logsList.children.length > 100) {
+    logsList.removeChild(logsList.firstChild);
+  }
+  
+  // Auto-scroll if at bottom
+  if (logsOpen) {
+    const isAtBottom = logsList.scrollHeight - logsList.scrollTop - logsList.clientHeight < 50;
+    if (isAtBottom) {
+      logsList.scrollTop = logsList.scrollHeight;
+    }
+  }
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// ============= Download Progress =============
+
+function handleDownloadProgress(progress) {
+  downloadSection.style.display = 'block';
+  progressFill.style.width = `${progress.percent}%`;
+  downloadPercent.textContent = `${progress.percent}%`;
+  
+  if (progress.total) {
+    const downloadedMB = (progress.downloaded / 1024 / 1024).toFixed(1);
+    const totalMB = (progress.total / 1024 / 1024).toFixed(1);
+    downloadText.textContent = `РЎРєР°С‡РёРІР°РЅРёРµ: ${downloadedMB} / ${totalMB} MB`;
+  }
+}
+
+// ============= Connect/Disconnect =============
+
+async function handleConnectClick() {
+  if (isSearching) {
+    connectBtn.querySelector('.btn-text').textContent = 'РћС‚РјРµРЅР°...';
+    await window.api.stopProxy();
+    return;
+  }
+  if (isConnecting || isDownloading) return;
+  
+  if (isConnected) {
+    // Disconnect
+    try {
+      await window.api.stopProxy();
+    } catch (error) {
+      showError(null, `РћС€РёР±РєР° РїСЂРё РѕС‚РєР»СЋС‡РµРЅРёРё: ${error.message}`);
+    }
+  } else {
+    // Connect
+    if (!await saveCustomTarget()) return;
+    isConnecting = true;
+    hideError();
+    statusIndicator.classList.remove('error');
+    statusIndicator.classList.add('connecting');
+    statusText.textContent = 'РџРѕРґРєР»СЋС‡РµРЅРёРµ...';
+    statusText.classList.remove('error-text');
+    connectBtn.classList.add('connecting');
+    connectBtn.querySelector('.btn-text').textContent = 'РџРѕРґРєР»СЋС‡РµРЅРёРµ...';
+    
+    try {
+      const result = await window.api.startProxy();
+      if (!result.success && result.error) {
+        // Error is handled via status update from backend
+      }
+    } catch (error) {
+      showError(null, `РћС€РёР±РєР° РїРѕРґРєР»СЋС‡РµРЅРёСЏ: ${error.message}`);
+    } finally {
+      isConnecting = false;
+      // Sync UI with actual backend state after connect attempt
+      await loadStatus();
+    }
+  }
+}
+
+// ============= Auto-update handlers =============
+
+let updateDownloadedVersion = null;
+let manualUpdateUrl = null;
+
+function handleUpdateStatus(data) {
+  const { status, version } = data;
+  
+  switch (status) {
+    case 'manual-available':
+      updateDownloadedVersion = version;
+      manualUpdateUrl = 'https://github.com/by-sonic/unblock-pro/releases/latest';
+      updateBanner.style.display = 'flex';
+      updateBanner.classList.remove('downloading');
+      updateText.textContent = `Р”РѕСЃС‚СѓРїРЅРѕ РѕР±РЅРѕРІР»РµРЅРёРµ v${version}`;
+      updateBtn.textContent = 'РЎРєР°С‡Р°С‚СЊ';
+      updateBtn.style.display = 'block';
+      updateBtn.disabled = false;
+      updateBtn.title = 'РћС‚РєСЂС‹С‚СЊ СЃС‚СЂР°РЅРёС†Сѓ СЂРµР»РёР·Р°';
+      break;
+    case 'available':
+      updateDownloadedVersion = null;
+      manualUpdateUrl = null;
+      updateBanner.style.display = 'flex';
+      updateBanner.classList.remove('downloading');
+      updateText.textContent = `РћР±РЅРѕРІР»РµРЅРёРµ v${version} Р·Р°РіСЂСѓР¶Р°РµС‚СЃСЏ...`;
+      updateBtn.style.display = 'none';
+      break;
+    case 'downloaded':
+      updateDownloadedVersion = version;
+      manualUpdateUrl = null;
+      updateBanner.style.display = 'flex';
+      updateBanner.classList.remove('downloading');
+      updateText.textContent = `РћР±РЅРѕРІР»РµРЅРёРµ v${version} РіРѕС‚РѕРІРѕ`;
+      updateBtn.textContent = 'РџРµСЂРµР·Р°РїСѓСЃС‚РёС‚СЊ';
+      updateBtn.style.display = 'block';
+      updateBtn.disabled = false;
+      updateBtn.title = 'РќР°Р¶РјРёС‚Рµ, С‡С‚РѕР±С‹ РїРµСЂРµР·Р°РїСѓСЃС‚РёС‚СЊ Рё СѓСЃС‚Р°РЅРѕРІРёС‚СЊ';
+      break;
+    case 'restarting':
+      updateBtn.disabled = true;
+      updateBtn.textContent = 'РџРµСЂРµР·Р°РїСѓСЃРє...';
+      updateText.textContent = 'Р—Р°РєСЂС‹С‚РёРµ РїСЂРёР»РѕР¶РµРЅРёСЏ...';
+      break;
+    case 'error':
+    case 'not-available':
+    case 'checking':
+      updateDownloadedVersion = null;
+      manualUpdateUrl = null;
+      break;
+  }
+}
+
+async function handleUpdateBtnClick() {
+  if (!updateDownloadedVersion || !window.api) return;
+  if (manualUpdateUrl) {
+    await window.api.openExternal(manualUpdateUrl);
+    return;
+  }
+  try {
+    updateBtn.disabled = true;
+    updateBtn.textContent = 'РџРµСЂРµР·Р°РїСѓСЃРє...';
+    updateText.textContent = 'Р—Р°РєСЂС‹С‚РёРµ РїСЂРёР»РѕР¶РµРЅРёСЏ...';
+    await window.api.installUpdate();
+
+    // If we're still here after 8 seconds, the restart likely failed silently.
+    // Show retry button so the user isn't stuck on "Closing app..." forever.
+    setTimeout(() => {
+      if (!updateBtn) return;
+      updateBtn.disabled = false;
+      updateBtn.textContent = 'РџРѕРІС‚РѕСЂРёС‚СЊ';
+      updateText.textContent = 'РџРµСЂРµР·Р°РїСѓСЃРє РЅРµ СѓРґР°Р»СЃСЏ. РџРѕРїСЂРѕР±СѓР№С‚Рµ РµС‰С‘ СЂР°Р· РёР»Рё Р·Р°РєСЂРѕР№С‚Рµ РІСЂСѓС‡РЅСѓСЋ.';
+    }, 8000);
+  } catch (e) {
+    updateBtn.disabled = false;
+    updateBtn.textContent = 'РџРµСЂРµР·Р°РїСѓСЃС‚РёС‚СЊ';
+    updateText.textContent = 'РћС€РёР±РєР°: ' + (e.message || 'РЅРµ СѓРґР°Р»РѕСЃСЊ РїРµСЂРµР·Р°РїСѓСЃС‚РёС‚СЊ');
+  }
+}
+
+function handleUpdateDownloadProgress(progress) {
+  updateBanner.style.display = 'flex';
+  updateBanner.classList.add('downloading');
+  updateText.textContent = `Р—Р°РіСЂСѓР·РєР° РѕР±РЅРѕРІР»РµРЅРёСЏ: ${progress.percent}%`;
+  updateBtn.style.display = 'none';
+}
+
+// Telegram link
+document.getElementById('updateHostsBtn')?.addEventListener('click', async () => {
+  const result = await window.api.updateHostsForDiscord();
+  if (result?.success) {
+    alert('Hosts РѕР±РЅРѕРІР»С‘РЅ. РџРµСЂРµР·Р°РїСѓСЃС‚РёС‚Рµ Discord РїСЂРё РЅРµРѕР±С…РѕРґРёРјРѕСЃС‚Рё.');
+  } else if (result?.notConnected) {
+    alert(result.error);
+  } else {
+    alert('РћС€РёР±РєР°: ' + (result?.error || 'РЅРµРёР·РІРµСЃС‚РЅР°СЏ РѕС€РёР±РєР°') + '\n\nР Р°Р·СЂРµС€РёС‚Рµ UAC, РµСЃР»Рё Р·Р°РїСЂРѕСЃ РїСЂР°РІ Р±С‹Р» РѕС‚РєР»РѕРЅС‘РЅ.');
+  }
+});
+
+document.getElementById('clearDiscordCacheBtn')?.addEventListener('click', async () => {
+  await window.api.clearDiscordCache();
+  alert('Р“РѕС‚РѕРІРѕ. Р—Р°РєСЂРѕР№С‚Рµ Discord Рё Р·Р°РїСѓСЃС‚РёС‚Рµ СЃРЅРѕРІР°.');
+});
+
+// For anyone left with a block from an older version: the app now removes it on
+// disconnect, but an existing one has to be cleared once.
+document.getElementById('cleanHostsBtn')?.addEventListener('click', async () => {
+  const result = await window.api.cleanHosts();
+  if (result?.removed) {
+    alert('Р—Р°РїРёСЃРё Discord СѓР±СЂР°РЅС‹ РёР· hosts. РџРµСЂРµР·Р°РїСѓСЃС‚РёС‚Рµ Discord.');
+  } else if (result?.success) {
+    alert('Р—Р°РїРёСЃРµР№ РїСЂРёР»РѕР¶РµРЅРёСЏ РІ hosts РЅРµС‚ вЂ” СѓР±РёСЂР°С‚СЊ РЅРµС‡РµРіРѕ.');
+  } else {
+    alert('РќРµ СѓРґР°Р»РѕСЃСЊ СѓР±СЂР°С‚СЊ Р·Р°РїРёСЃРё: ' + (result?.error || 'РЅРµРёР·РІРµСЃС‚РЅР°СЏ РѕС€РёР±РєР°'));
+  }
+});
+
+document.getElementById('tgLink')?.addEventListener('click', (e) => {
+  e.preventDefault();
+  window.api.openExternal('https://t.me/bysonicx');
+});
+
+document.getElementById('promoBtn')?.addEventListener('click', () => {
+  window.api.openExternal('https://t.me/rosevpnru_bot');
+});
+
+// ============= Custom Domains =============
+
+async function loadCustomDomains() {
+  try {
+    const data = await window.api.getCustomDomains();
+    customIncludeDomains = data.include || [];
+    customExcludeDomains = data.exclude || [];
+    renderDomainList('include');
+    renderDomainList('exclude');
+  } catch (e) {}
+}
+
+function renderDomainList(type) {
+  const list = type === 'include' ? includeList : excludeList;
+  const domains = type === 'include' ? customIncludeDomains : customExcludeDomains;
+
+  list.innerHTML = '';
+  if (domains.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'domain-empty';
+    empty.textContent = type === 'include' ? 'РќРµС‚ РґРѕР±Р°РІР»РµРЅРЅС‹С… РґРѕРјРµРЅРѕРІ' : 'РќРµС‚ РёСЃРєР»СЋС‡С‘РЅРЅС‹С… РґРѕРјРµРЅРѕРІ';
+    list.appendChild(empty);
+    return;
+  }
+
+  domains.forEach((domain, i) => {
+    const tag = document.createElement('span');
+    tag.className = `domain-tag ${type}`;
+    tag.innerHTML = `
+      ${escapeHtml(domain)}
+      <button class="domain-remove" title="РЈРґР°Р»РёС‚СЊ">
+        <svg width="10" height="10" viewBox="0 0 14 14">
+          <path d="M1 1L13 13M13 1L1 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
+    `;
+    tag.querySelector('.domain-remove').addEventListener('click', () => removeDomain(type, i));
+    list.appendChild(tag);
+  });
+}
+
+function isValidDomain(str) {
+  return /^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)+$/.test(str);
+}
+
+async function addDomain(type) {
+  const input = type === 'include' ? includeInput : excludeInput;
+  const domain = input.value.trim().toLowerCase();
+
+  if (!domain) return;
+  if (!isValidDomain(domain)) {
+    input.style.borderColor = 'var(--accent-red)';
+    setTimeout(() => { input.style.borderColor = ''; }, 1500);
+    return;
+  }
+
+  const domains = type === 'include' ? customIncludeDomains : customExcludeDomains;
+  if (domains.includes(domain)) {
+    input.value = '';
+    return;
+  }
+
+  domains.push(domain);
+  input.value = '';
+  renderDomainList(type);
+  await saveCustomDomains();
+}
+
+async function removeDomain(type, index) {
+  const domains = type === 'include' ? customIncludeDomains : customExcludeDomains;
+  domains.splice(index, 1);
+  renderDomainList(type);
+  await saveCustomDomains();
+}
+
+async function saveCustomDomains() {
+  try {
+    await window.api.setCustomDomains({
+      include: customIncludeDomains,
+      exclude: customExcludeDomains
+    });
+  } catch (e) {}
+}
+
+// Start
+init();
+
+
+===== main.js index =====
+
+166: // process.resourcesPath. Using userData (~/.../UnblockPro/) is always writable.
+249: advice = 'Обычные пользователи могут изменять папку приложения. Запустите установщик UnblockPro поверх текущей версии — он заново выставит права на папку.';
+251: advice = `Обычные пользователи могут изменять системную папку ${aclPath} — на этом компьютере изменены её стандартные права, переустановка UnblockPro этого не исправит.`;
+1285: return path.join(app.getPath('userData'), 'unblockpro.log');
+2252: sudo.exec(`"${batchFile}"`, { name: 'UnblockPro' }, (error) => {
+3094: mainWindow = new BrowserWindow({
+3172: tray.setToolTip('UnblockPro');
+3237: ipcMain.handle('start-proxy', async () => {
+3241: ipcMain.handle('stop-proxy', () => {
+3245: ipcMain.handle('download-binaries', async () => {
+3249: ipcMain.handle('get-status', () => {
+3264: ipcMain.handle('get-logs', () => {
+3271: ipcMain.handle('copy-logs', () => {
+3281: ipcMain.handle('show-log-file', () => {
+3296: ipcMain.handle('clear-error', () => {
+3302: ipcMain.handle('minimize-window', () => mainWindow.minimize());
+3303: ipcMain.handle('close-window', () => mainWindow.hide());
+3305: ipcMain.handle('open-external', (event, url) => {
+3315: const HOSTS_MARKER = '# UnblockPro Discord/Telegram hosts';
+3370: fs.copyFileSync(cleanup.hostsPath, cleanup.hostsPath + '.unblockpro.bak');
+3386: fs.copyFileSync(hostsPath, hostsPath + '.unblockpro.bak');
+3465: ipcMain.handle('clean-hosts', async () => {
+3477: ipcMain.handle('update-hosts-for-discord', async () => {
+3523: sudo.exec(command, { name: 'UnblockPro update hosts' }, (err) => {
+3539: ipcMain.handle('clear-discord-cache', () => {
+3556: ipcMain.handle('get-system-info', () => ({
+3564: ipcMain.handle('get-settings', () => {
+3568: ipcMain.handle('install-update', async () => {
+3587: // Clean up proxy BEFORE triggering quit — prevents before-quit from blocking
+3617: ipcMain.handle('check-for-updates', () => {
+3621: ipcMain.handle('set-auto-start', (event, enabled) => {
+3629: ipcMain.handle('set-auto-connect', (event, enabled) => {
+3636: ipcMain.handle('set-auto-update', (event, enabled) => {
+3643: ipcMain.handle('get-strategies', () => {
+3652: ipcMain.handle('set-selected-strategy', (event, strategyName) => {
+3659: ipcMain.handle('set-proxy-port', (event, value) => {
+3672: ipcMain.handle('set-custom-target', (event, value) => {
+3687: ipcMain.handle('get-custom-domains', () => {
+3695: ipcMain.handle('set-custom-domains', (event, { include, exclude }) => {
+3769: app.on('will-quit', () => {
+3773: app.on('before-quit', (event) => {
+3796: // Normal quit awaits privileged cleanup in before-quit. The process exit
