@@ -76,6 +76,27 @@
 
     <!-- Main content -->
     <div class="main-content">
+      <section class="hx-hero">
+        <article class="hx-card" id="zapretCard">
+          <div class="hx-top">
+            <div class="hx-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L3 7v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-9-5z"/><path d="M9 12l2 2 4-4"/></svg></div>
+            <label class="hx-switch"><input type="checkbox" id="zapretToggle" aria-label="Discord и YouTube"><span class="hx-track"></span><span class="hx-thumb"></span></label>
+          </div>
+          <h2 class="hx-title">Discord и YouTube</h2>
+          <p class="hx-sub">zapret · обход DPI</p>
+          <p class="hx-status"><span class="hx-dot"></span><span id="zapretStatus">Отключено</span></p>
+        </article>
+        <article class="hx-card" id="tgCard">
+          <div class="hx-top">
+            <div class="hx-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg></div>
+            <label class="hx-switch"><input type="checkbox" id="tgToggle" aria-label="Telegram"><span class="hx-track"></span><span class="hx-thumb"></span></label>
+          </div>
+          <h2 class="hx-title">Telegram</h2>
+          <p class="hx-sub">локальный прокси · tglock</p>
+          <p class="hx-status"><span class="hx-dot"></span><span id="tgStatus">Выключено</span></p>
+          <button type="button" class="hx-link" id="tgOpenBtn" style="display: none;">Открыть прокси в Telegram</button>
+        </article>
+      </section>
       <!-- Status section -->
       <div class="status-section">
         <div class="status-indicator" id="statusIndicator">
@@ -166,20 +187,7 @@
       <button class="connect-btn" id="connectBtn">
         <span class="btn-text">Подключить</span>
       </button>
-            <!-- Telegram (tglock) -->
-      <div class="tg-card" id="tgCard">
-        <div class="tg-row">
-          <div class="tg-info">
-            <span class="setting-label">Telegram</span>
-            <span class="setting-desc" id="tgStatus">Выключено</span>
-          </div>
-          <label class="toggle">
-            <input type="checkbox" id="tgToggle">
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-        <button type="button" class="link-btn" id="tgOpenBtn" style="display: none;">Открыть прокси в Telegram</button>
-      </div>
+
       <!-- Custom domains -->
       <div class="domains-card" id="domainsCard">
         <button class="domains-header" id="domainsToggle">
@@ -381,5 +389,7 @@
   </div>
 
   <script src="renderer.js"></script>
+  <script src="hexorcist-ui.js"></script>
+  <script src="tglock-ui.js"></script>
 </body>
 </html>

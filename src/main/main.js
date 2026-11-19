@@ -1,4 +1,5 @@
 const { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, dialog, clipboard, shell } = require('electron');
+require('./hexorcist-window').applyWindowLayout();
 const path = require('path');
 const { spawn, exec, execFile, execFileSync, execSync } = require('child_process');
 const fs = require('fs');
